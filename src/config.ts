@@ -42,10 +42,78 @@ export const ALLOWED_USERS: number[] = (
   .map((x) => parseInt(x.trim(), 10))
   .filter((x) => !isNaN(x));
 
-export const WORKING_DIR = process.env.CLAUDE_WORKING_DIR || HOME;
+// Keep backward compatibility with CLAUDE_WORKING_DIR while allowing a generic
+// AI_WORKING_DIR for multi-assistant setups (Claude + Codex).
+export const WORKING_DIR =
+  process.env.AI_WORKING_DIR || process.env.CLAUDE_WORKING_DIR || HOME;
 export const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 export const CLAUDE_ENABLE_CHROME =
   (process.env.CLAUDE_ENABLE_CHROME || "false").toLowerCase() === "true";
+export const AI_ASSISTANT: "claude" | "codex" =
+  (process.env.AI_ASSISTANT || "claude").toLowerCase() === "codex"
+    ? "codex"
+    : "claude";
+export const CLAUDE_MODEL =
+  process.env.CLAUDE_MODEL || "claude-opus-4-6";
+export const CODEX_MODEL = process.env.CODEX_MODEL || "gpt-5.3-codex";
+export type CodexReasoningEffort =
+  | "minimal"
+  | "low"
+  | "medium"
+  | "high"
+  | "xhigh";
+export type CodexSandboxMode =
+  | "read-only"
+  | "workspace-write"
+  | "danger-full-access";
+export type CodexApprovalPolicy =
+  | "never"
+  | "on-request"
+  | "on-failure"
+  | "untrusted";
+export type CodexWebSearchMode = "disabled" | "cached" | "live";
+const codexEffortRaw = (process.env.CODEX_REASONING_EFFORT || "medium")
+  .toLowerCase()
+  .trim();
+export const CODEX_REASONING_EFFORT: CodexReasoningEffort =
+  codexEffortRaw === "minimal" ||
+  codexEffortRaw === "low" ||
+  codexEffortRaw === "medium" ||
+  codexEffortRaw === "high" ||
+  codexEffortRaw === "xhigh"
+    ? codexEffortRaw
+    : "medium";
+const codexSandboxRaw = (process.env.CODEX_SANDBOX_MODE || "workspace-write")
+  .toLowerCase()
+  .trim();
+export const CODEX_SANDBOX_MODE: CodexSandboxMode =
+  codexSandboxRaw === "read-only" ||
+  codexSandboxRaw === "workspace-write" ||
+  codexSandboxRaw === "danger-full-access"
+    ? codexSandboxRaw
+    : "workspace-write";
+const codexApprovalRaw = (process.env.CODEX_APPROVAL_POLICY || "never")
+  .toLowerCase()
+  .trim();
+export const CODEX_APPROVAL_POLICY: CodexApprovalPolicy =
+  codexApprovalRaw === "never" ||
+  codexApprovalRaw === "on-request" ||
+  codexApprovalRaw === "on-failure" ||
+  codexApprovalRaw === "untrusted"
+    ? codexApprovalRaw
+    : "never";
+export const CODEX_NETWORK_ACCESS_ENABLED =
+  (process.env.CODEX_NETWORK_ACCESS_ENABLED || "true").toLowerCase() ===
+  "true";
+const codexWebSearchRaw = (process.env.CODEX_WEB_SEARCH_MODE || "live")
+  .toLowerCase()
+  .trim();
+export const CODEX_WEB_SEARCH_MODE: CodexWebSearchMode =
+  codexWebSearchRaw === "disabled" ||
+  codexWebSearchRaw === "cached" ||
+  codexWebSearchRaw === "live"
+    ? codexWebSearchRaw
+    : "live";
 
 // ============== Claude CLI Path ==============
 
@@ -101,6 +169,7 @@ export const ALLOWED_PATHS: string[] = allowedPathsStr
   ? allowedPathsStr
       .split(",")
       .map((p) => p.trim())
+      .map((p) => p.replace(/^~/, HOME))
       .filter(Boolean)
   : defaultAllowedPaths;
 
@@ -255,5 +324,5 @@ if (ALLOWED_USERS.length === 0) {
 }
 
 console.log(
-  `Config loaded: ${ALLOWED_USERS.length} allowed users, working dir: ${WORKING_DIR}`
+  `Config loaded: ${ALLOWED_USERS.length} allowed users, assistant: ${AI_ASSISTANT}, working dir: ${WORKING_DIR}`
 );
