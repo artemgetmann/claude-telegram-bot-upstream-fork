@@ -21,6 +21,7 @@ import {
   AI_ASSISTANT,
   ALLOWED_PATHS,
   CLAUDE_ENABLE_CHROME,
+  CLAUDE_REASONING_EFFORT,
   CLAUDE_MODEL,
   CODEX_APPROVAL_POLICY,
   CODEX_MODEL,
@@ -28,6 +29,7 @@ import {
   CODEX_REASONING_EFFORT,
   CODEX_SANDBOX_MODE,
   CODEX_WEB_SEARCH_MODE,
+  type ClaudeReasoningEffort,
   type CodexReasoningEffort,
   MCP_SERVERS,
   SAFETY_PROMPT,
@@ -55,21 +57,25 @@ import type {
 /**
  * Determine thinking token budget based on message keywords.
  */
-function getThinkingLevel(message: string): number {
+function getThinkingLevel(
+  message: string,
+  defaultEffort: ClaudeReasoningEffort
+): number {
   const msgLower = message.toLowerCase();
+  const baseThinkingTokens =
+    defaultEffort === "high" ? 50000 : defaultEffort === "medium" ? 10000 : 0;
 
   // Check deep thinking triggers first (more specific)
   if (THINKING_DEEP_KEYWORDS.some((k) => msgLower.includes(k))) {
-    return 50000;
+    return Math.max(baseThinkingTokens, 50000);
   }
 
   // Check normal thinking triggers
   if (THINKING_KEYWORDS.some((k) => msgLower.includes(k))) {
-    return 10000;
+    return Math.max(baseThinkingTokens, 10000);
   }
 
-  // Default: no thinking
-  return 0;
+  return baseThinkingTokens;
 }
 
 /**
@@ -199,6 +205,7 @@ class ClaudeSession {
   conversationTitle: string | null = null;
   private assistantMode: AssistantMode = AI_ASSISTANT;
   private claudeModel = CLAUDE_MODEL;
+  private claudeEffort: ClaudeReasoningEffort = CLAUDE_REASONING_EFFORT;
   private codexModel = CODEX_MODEL;
   private codexEffort: CodexReasoningEffort = CODEX_REASONING_EFFORT;
 
@@ -226,6 +233,10 @@ class ClaudeSession {
 
   get codexReasoningEffort(): CodexReasoningEffort {
     return this.codexEffort;
+  }
+
+  get claudeReasoningEffort(): ClaudeReasoningEffort {
+    return this.claudeEffort;
   }
 
   get modelDisplay(): string {
@@ -432,7 +443,7 @@ class ClaudeSession {
     }
 
     const isNewSession = !this.isActive;
-    const thinkingTokens = getThinkingLevel(message);
+    const thinkingTokens = getThinkingLevel(message, this.claudeEffort);
     const thinkingLabel =
       { 0: "off", 10000: "normal", 50000: "deep" }[thinkingTokens] ||
       String(thinkingTokens);

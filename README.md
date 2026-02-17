@@ -122,6 +122,7 @@ TELEGRAM_ALLOWED_USERS=123456789           # Your Telegram user ID
 AI_WORKING_DIR=/path/to/your/folder        # Where the assistant runs (loads CLAUDE.md, skills, MCP)
 AI_ASSISTANT=claude                        # or codex
 CLAUDE_MODEL=claude-opus-4-6
+CLAUDE_REASONING_EFFORT=high              # low | medium | high
 CODEX_MODEL=gpt-5.3-codex
 CODEX_REASONING_EFFORT=medium             # minimal | low | medium | high | xhigh
 CODEX_SANDBOX_MODE=workspace-write        # read-only | workspace-write | danger-full-access
@@ -136,13 +137,19 @@ OPENAI_API_KEY=sk-...                      # For voice transcription
 **File access paths:** By default, the assistant can access:
 
 - `AI_WORKING_DIR` / `CLAUDE_WORKING_DIR` (or home directory if not set)
-- `~/Documents`, `~/Downloads`, `~/Desktop`
+- `~/Programming_Projects`
 - `~/.claude` (for Claude Code plans and settings)
+- `~/.codex` (for Codex auth/session state)
 
-To customize, set `ALLOWED_PATHS` in `.env` (comma-separated). Note: this **overrides** all defaults, so include `~/.claude` if you want plan mode to work:
+To customize quickly:
+- Set `ALLOWED_PATHS` in `.env` (comma-separated) to fully override defaults
+- Use `ALLOWED_PATHS_EXTRA` to append paths
+- Use `ALLOWED_PATHS_REMOVE` to subtract paths
 
 ```bash
-ALLOWED_PATHS=/your/project,/other/path,~/.claude
+ALLOWED_PATHS=/your/project,/other/path,~/.claude,~/.codex
+ALLOWED_PATHS_EXTRA=~/Documents
+ALLOWED_PATHS_REMOVE=~/Programming_Projects
 ```
 
 ### 2.1 Claude in Chrome (Claude Code Browser Control)

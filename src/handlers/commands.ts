@@ -10,6 +10,7 @@ import {
   WORKING_DIR,
   ALLOWED_USERS,
   ALLOWED_PATHS,
+  CLAUDE_ENABLE_CHROME,
   CODEX_SANDBOX_MODE,
   CODEX_APPROVAL_POLICY,
   CODEX_NETWORK_ACCESS_ENABLED,
@@ -199,6 +200,10 @@ export async function handlePolicy(ctx: Context): Promise<void> {
   lines.push(`🤖 Assistant: <code>${session.assistant}</code>`);
   lines.push(`🧠 Model: <code>${session.modelDisplay}</code>`);
   lines.push(`📁 Working dir: <code>${WORKING_DIR}</code>`);
+  lines.push("");
+  lines.push("<b>Claude Runtime:</b>");
+  lines.push(`• Chrome tools: <code>${CLAUDE_ENABLE_CHROME ? "enabled" : "disabled"}</code>`);
+  lines.push(`• Default effort: <code>${session.claudeReasoningEffort}</code>`);
   lines.push("");
   lines.push("<b>Codex Runtime:</b>");
   lines.push(`• Sandbox: <code>${CODEX_SANDBOX_MODE}</code>`);

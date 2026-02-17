@@ -5,7 +5,7 @@
  */
 
 import { homedir } from "os";
-import { resolve, dirname } from "path";
+import { resolve, dirname, isAbsolute } from "path";
 import type { McpServerConfig } from "./types";
 
 // ============== Environment Setup ==============
@@ -55,6 +55,16 @@ export const AI_ASSISTANT: "claude" | "codex" =
     : "claude";
 export const CLAUDE_MODEL =
   process.env.CLAUDE_MODEL || "claude-opus-4-6";
+export type ClaudeReasoningEffort = "low" | "medium" | "high";
+const claudeEffortRaw = (process.env.CLAUDE_REASONING_EFFORT || "high")
+  .toLowerCase()
+  .trim();
+export const CLAUDE_REASONING_EFFORT: ClaudeReasoningEffort =
+  claudeEffortRaw === "low" ||
+  claudeEffortRaw === "medium" ||
+  claudeEffortRaw === "high"
+    ? claudeEffortRaw
+    : "high";
 export const CODEX_MODEL = process.env.CODEX_MODEL || "gpt-5.3-codex";
 export type CodexReasoningEffort =
   | "minimal"
@@ -155,23 +165,56 @@ export { MCP_SERVERS };
 
 // ============== Security Configuration ==============
 
-// Allowed directories for file operations
-const defaultAllowedPaths = [
-  WORKING_DIR,
-  `${HOME}/Documents`,
-  `${HOME}/Downloads`,
-  `${HOME}/Desktop`,
-  `${HOME}/.claude`, // Claude Code data (plans, settings)
-];
+function normalizeAllowedPath(rawPath: string): string | null {
+  const value = rawPath.trim();
+  if (!value) return null;
+  const expanded = value.replace(/^~(?=\/|$)/, HOME);
+  return isAbsolute(expanded)
+    ? resolve(expanded)
+    : resolve(WORKING_DIR, expanded);
+}
 
-const allowedPathsStr = process.env.ALLOWED_PATHS || "";
-export const ALLOWED_PATHS: string[] = allowedPathsStr
-  ? allowedPathsStr
-      .split(",")
-      .map((p) => p.trim())
-      .map((p) => p.replace(/^~/, HOME))
-      .filter(Boolean)
-  : defaultAllowedPaths;
+function parseAllowedPaths(rawValue: string): string[] {
+  return rawValue
+    .split(",")
+    .map((path) => normalizeAllowedPath(path))
+    .filter((path): path is string => Boolean(path));
+}
+
+function dedupePaths(paths: string[]): string[] {
+  return Array.from(new Set(paths));
+}
+
+// Allowed directories for file operations.
+// Defaults are intentionally narrow; use ALLOWED_PATHS_EXTRA / _REMOVE to tune.
+const defaultAllowedPaths = dedupePaths(
+  [
+    WORKING_DIR,
+    `${HOME}/Programming_Projects`,
+    `${HOME}/.claude`, // Claude Code data (plans, settings)
+    `${HOME}/.codex`, // Codex auth/session data
+  ]
+    .map((path) => normalizeAllowedPath(path))
+    .filter((path): path is string => Boolean(path))
+);
+
+const allowedPathsOverride = parseAllowedPaths(process.env.ALLOWED_PATHS || "");
+const allowedPathsExtra = parseAllowedPaths(process.env.ALLOWED_PATHS_EXTRA || "");
+const allowedPathsRemove = new Set(
+  parseAllowedPaths(process.env.ALLOWED_PATHS_REMOVE || "")
+);
+const normalizedWorkingDir = normalizeAllowedPath(WORKING_DIR);
+const basePaths =
+  allowedPathsOverride.length > 0 ? allowedPathsOverride : defaultAllowedPaths;
+const mergedPaths = dedupePaths([...basePaths, ...allowedPathsExtra]).filter(
+  (path) => !allowedPathsRemove.has(path)
+);
+
+if (normalizedWorkingDir && !mergedPaths.includes(normalizedWorkingDir)) {
+  mergedPaths.unshift(normalizedWorkingDir);
+}
+
+export const ALLOWED_PATHS: string[] = mergedPaths;
 
 // Build safety prompt dynamically from ALLOWED_PATHS
 function buildSafetyPrompt(allowedPaths: string[]): string {
