@@ -30,62 +30,123 @@ To achieve this, I set up a folder with a CLAUDE.md that teaches Claude about me
 - 🧠 **Extended thinking**: Trigger Claude's reasoning by using words like "think" or "reason" - you'll see its thought process as it works (configurable via `THINKING_TRIGGER_KEYWORDS`)
 - 🔘 **Interactive buttons**: Claude can present options as tappable inline buttons via the built-in `ask_user` MCP tool
 
-## Quick Start
+## 5-Minute Setup (macOS, beginner path)
+
+Copy/paste this block in Terminal:
 
 ```bash
-git clone https://github.com/linuz90/claude-telegram-bot?tab=readme-ov-file
-cd claude-telegram-bot-ts
+# 1) Install Apple Command Line Tools (needed for git)
+xcode-select --install
 
+# 2) Install Bun
+curl -fsSL https://bun.sh/install | bash
+source ~/.bash_profile 2>/dev/null || source ~/.profile 2>/dev/null || true
+
+# 3) Clone and install dependencies
+git clone https://github.com/artemgetmann/claude-telegram-bot.git ~/.claude-telegram-bot
+cd ~/.claude-telegram-bot
+~/.bun/bin/bun install
+
+# 4) Create a separate assistant workspace (NOT this repo)
+mkdir -p ~/assistant-workspace
+
+# 5) Create env file
 cp .env.example .env
-# Edit .env with your credentials
-
-bun install
-bun run src/index.ts
-# or directly start in Codex mode
-bun run start:codex
 ```
 
-### Prerequisites
+Important: keep `AI_WORKING_DIR` outside this repository.  
+Example:
+- Bot code repo: `~/.claude-telegram-bot`
+- Assistant workspace: `~/assistant-workspace` (or `~/klotz-telegram-bot`)
+
+Example assistant workspace layout:
+
+```text
+~/Programming_Projects/klotz-telegram-bot
+├── AGENTS.md -> CLAUDE.md
+├── CLAUDE.md
+└── notes/
+```
+
+Then edit `.env` and set at minimum:
+
+```bash
+TELEGRAM_BOT_TOKEN=1234567890:ABC-DEF...
+TELEGRAM_ALLOWED_USERS=123456789
+AI_WORKING_DIR=/Users/<your-user>/assistant-workspace
+AI_ASSISTANT=claude
+```
+
+Then run:
+
+```bash
+~/.bun/bin/bun run start
+```
+
+Then open Telegram and send `/start` to your bot.
+
+## Common setup failures (and fixes)
+
+**`xcrun: invalid active developer path`**
+
+```bash
+xcode-select --install
+```
+
+If it still fails after install:
+
+```bash
+sudo rm -rf /Library/Developer/CommandLineTools
+xcode-select --install
+```
+
+**`bun: command not found`**
+
+Run Bun directly:
+
+```bash
+~/.bun/bin/bun --version
+~/.bun/bin/bun install
+```
+
+**`git clone` asks for GitHub username/password**
+
+Your repo is private. Either:
+- make the repo public, then clone again, or
+- use username + Personal Access Token (PAT) as password.
+
+## Prerequisites
 
 - **Bun 1.0+** - [Install Bun](https://bun.sh/)
-- **Claude Agent SDK** - `@anthropic-ai/claude-agent-sdk` (for Claude mode)
-- **Codex SDK** - `@openai/codex-sdk` (for Codex mode, installed via bun install)
 - **Telegram Bot Token** from [@BotFather](https://t.me/BotFather)
 - **OpenAI API Key** (optional, for voice transcription)
 
-### Assistant Selection
+## Assistant/Auth Quick Choices
 
-Choose which assistant powers the bot:
+Set assistant in `.env`:
 
 ```bash
-# .env
 AI_ASSISTANT=claude   # or codex
 ```
 
-If `AI_ASSISTANT=codex`, authenticate once on the host machine:
+If using `codex`:
 
 ```bash
 codex login
 ```
 
-### Claude Authentication
-
-The bot uses the `@anthropic-ai/claude-agent-sdk` which supports two authentication methods:
+If using `claude`, choose one auth mode:
 
 | Method                     | Best For                                | Setup                             |
 | -------------------------- | --------------------------------------- | --------------------------------- |
-| **CLI Auth** (recommended) | High usage, cost-effective              | Run `claude` once to authenticate |
-| **API Key**                | CI/CD, environments without Claude Code | Set `ANTHROPIC_API_KEY` in `.env` |
+| **Claude CLI Auth** (recommended) | Personal use, heavy usage, lower cost | Run `claude` once and sign in |
+| **Anthropic API Key**      | Servers/CI without Claude CLI           | Set `ANTHROPIC_API_KEY` in `.env` |
 
-**CLI Auth** (recommended): The SDK automatically uses your Claude Code login. Just ensure you've run `claude` at least once and authenticated. This uses your Claude Code subscription which is much more cost-effective for heavy usage.
-
-**API Key**: For environments where Claude Code isn't installed. Get a key from [console.anthropic.com](https://console.anthropic.com/) and add to `.env`:
+API key format example:
 
 ```bash
 ANTHROPIC_API_KEY=sk-ant-api03-...
 ```
-
-Note: API usage is billed per token and can get expensive quickly for heavy use.
 
 ## Configuration
 
@@ -119,7 +180,7 @@ TELEGRAM_BOT_TOKEN=1234567890:ABC-DEF...   # From @BotFather
 TELEGRAM_ALLOWED_USERS=123456789           # Your Telegram user ID
 
 # Recommended
-AI_WORKING_DIR=/path/to/your/folder        # Where the assistant runs (loads CLAUDE.md, skills, MCP)
+AI_WORKING_DIR=/path/to/your/folder        # Where the assistant runs (loads CLAUDE.md, skills, MCP). Use a folder OUTSIDE this repo.
 AI_ASSISTANT=claude                        # or codex
 CLAUDE_MODEL=claude-opus-4-6
 CLAUDE_REASONING_EFFORT=high              # low | medium | high
@@ -222,7 +283,8 @@ Model switch format (canonical):
 ```bash
 cp launchagent/com.claude-telegram-ts.plist.template ~/Library/LaunchAgents/com.claude-telegram-ts.plist
 # Edit the plist with your paths and env vars
-launchctl load ~/Library/LaunchAgents/com.claude-telegram-ts.plist
+launchctl bootout gui/$(id -u)/com.claude-telegram-ts 2>/dev/null || true
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.claude-telegram-ts.plist
 ```
 
 The bot will start automatically on login and restart if it crashes.
@@ -232,8 +294,8 @@ The bot will start automatically on login and restart if it crashes.
 **Logs:**
 
 ```bash
-tail -f /tmp/claude-telegram-bot-ts.log   # stdout
-tail -f /tmp/claude-telegram-bot-ts.err   # stderr
+tail -f /tmp/claude-telegram-bot.log   # stdout
+tail -f /tmp/claude-telegram-bot.err   # stderr
 ```
 
 **Shell aliases:** If running as a service, these aliases make it easy to manage the bot (add to `~/.zshrc` or `~/.bashrc`):
@@ -243,7 +305,7 @@ alias cbot='launchctl list | grep com.claude-telegram-ts'
 alias cbot-stop='launchctl bootout gui/$(id -u)/com.claude-telegram-ts 2>/dev/null && echo "Stopped"'
 alias cbot-start='launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.claude-telegram-ts.plist 2>/dev/null && echo "Started"'
 alias cbot-restart='launchctl kickstart -k gui/$(id -u)/com.claude-telegram-ts && echo "Restarted"'
-alias cbot-logs='tail -f /tmp/claude-telegram-bot-ts.log'
+alias cbot-logs='tail -f /tmp/claude-telegram-bot.log'
 ```
 
 ## Development
@@ -284,7 +346,7 @@ Multiple layers protect against misuse:
 
 - Verify your user ID is in `TELEGRAM_ALLOWED_USERS`
 - Check the bot token is correct
-- Look at logs: `tail -f /tmp/claude-telegram-bot-ts.err`
+- Look at logs: `tail -f /tmp/claude-telegram-bot.err`
 - Ensure the bot process is running
 
 **Claude authentication issues**
