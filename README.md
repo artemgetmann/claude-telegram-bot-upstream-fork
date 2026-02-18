@@ -49,25 +49,29 @@ git clone https://github.com/artemgetmann/claude-telegram-bot.git ~/.claude-tele
 cd ~/.claude-telegram-bot
 ~/.bun/bin/bun install
 
-# 4) Create a separate assistant workspace (NOT this repo)
-mkdir -p ~/assistant-workspace
+# 4) Create local assistant workspace inside this repo
+mkdir -p ./workspace
 
 # 5) Create env file
 cp .env.example .env
 ```
 
-Important: keep `AI_WORKING_DIR` outside this repository.  
-Example:
-- Bot code repo: `~/.claude-telegram-bot`
-- Assistant workspace: `~/assistant-workspace` (or `~/klotz-telegram-bot`)
+Recommended default: keep assistant context in `./workspace` inside this repo.
+Benefits:
+- one folder to back up/move
+- no broken paths between code and assistant context
+- runtime/session files can live under the same workspace root
 
 Example assistant workspace layout:
 
 ```text
-~/Programming_Projects/klotz-telegram-bot
-├── AGENTS.md -> CLAUDE.md
-├── CLAUDE.md
-└── notes/
+~/.claude-telegram-bot
+├── src/
+├── workspace/
+│   ├── AGENTS.md -> CLAUDE.md
+│   ├── CLAUDE.md
+│   └── notes/
+└── .env
 ```
 
 Then edit `.env` and set at minimum:
@@ -75,7 +79,7 @@ Then edit `.env` and set at minimum:
 ```bash
 TELEGRAM_BOT_TOKEN=1234567890:ABC-DEF...
 TELEGRAM_ALLOWED_USERS=123456789
-AI_WORKING_DIR=/Users/<your-user>/assistant-workspace
+AI_WORKING_DIR=/Users/<your-user>/.claude-telegram-bot/workspace
 AI_ASSISTANT=claude
 ```
 
@@ -182,7 +186,7 @@ TELEGRAM_BOT_TOKEN=1234567890:ABC-DEF...   # From @BotFather
 TELEGRAM_ALLOWED_USERS=123456789           # Your Telegram user ID
 
 # Recommended
-AI_WORKING_DIR=/path/to/your/folder        # Where the assistant runs (loads CLAUDE.md, skills, MCP). Use a folder OUTSIDE this repo.
+AI_WORKING_DIR=/path/to/this/repo/workspace  # Where the assistant runs (loads CLAUDE.md, skills, MCP)
 AI_ASSISTANT=claude                        # or codex
 CLAUDE_MODEL=claude-opus-4-6
 CLAUDE_REASONING_EFFORT=high              # low | medium | high
@@ -193,6 +197,9 @@ CODEX_APPROVAL_POLICY=never               # never | on-request | on-failure | un
 CODEX_NETWORK_ACCESS_ENABLED=true
 CODEX_WEB_SEARCH_MODE=live                # disabled | cached | live
 OPENAI_API_KEY=sk-...                      # For voice transcription
+
+# Optional runtime root (defaults to AI_WORKING_DIR/.runtime)
+AI_RUNTIME_DIR=/path/to/this/repo/workspace/.runtime
 ```
 
 **Finding your Telegram user ID:** Message [@userinfobot](https://t.me/userinfobot) on Telegram.
@@ -340,7 +347,7 @@ Multiple layers protect against misuse:
 3. **Path validation** - File access restricted to `ALLOWED_PATHS`
 4. **Command safety** - Destructive patterns like `rm -rf /` are blocked
 5. **Rate limiting** - Prevents runaway usage
-6. **Audit logging** - All interactions logged to `/tmp/claude-telegram-audit.log`
+6. **Audit logging** - All interactions logged to `<AI_RUNTIME_DIR>/claude-telegram-audit.log` by default
 
 ## Troubleshooting
 
@@ -364,7 +371,7 @@ Multiple layers protect against misuse:
 
 **Claude can't access files**
 
-- Check `CLAUDE_WORKING_DIR` points to an existing directory
+- Check `AI_WORKING_DIR` (or `CLAUDE_WORKING_DIR`) points to an existing directory
 - Verify `ALLOWED_PATHS` includes directories you want Claude to access
 - Ensure the bot process has read/write permissions
 
