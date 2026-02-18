@@ -92,6 +92,51 @@ export class StreamingState {
 }
 
 /**
+ * Format content for Telegram, ensuring it fits within the message limit.
+ * Truncates raw content and re-converts if HTML output exceeds the limit.
+ */
+function formatWithinLimit(
+  content: string,
+  safeLimit: number = TELEGRAM_SAFE_LIMIT
+): string {
+  let display =
+    content.length > safeLimit ? content.slice(0, safeLimit) + "..." : content;
+  let formatted = convertMarkdownToHtml(display);
+
+  // HTML tags can inflate content beyond the limit - shrink until it fits
+  if (formatted.length > TELEGRAM_MESSAGE_LIMIT) {
+    const ratio = TELEGRAM_MESSAGE_LIMIT / formatted.length;
+    display = content.slice(0, Math.floor(safeLimit * ratio * 0.95)) + "...";
+    formatted = convertMarkdownToHtml(display);
+  }
+
+  return formatted;
+}
+
+/**
+ * Split long formatted content into chunks and send as separate messages.
+ */
+async function sendChunkedMessages(
+  ctx: Context,
+  content: string
+): Promise<void> {
+  // Split on markdown content first, then format each chunk
+  for (let i = 0; i < content.length; i += TELEGRAM_SAFE_LIMIT) {
+    const chunk = content.slice(i, i + TELEGRAM_SAFE_LIMIT);
+    try {
+      await ctx.reply(chunk, { parse_mode: "HTML" });
+    } catch {
+      // HTML failed (possibly broken tags from split) - try plain text
+      try {
+        await ctx.reply(chunk);
+      } catch (plainError) {
+        console.debug("Failed to send chunk:", plainError);
+      }
+    }
+  }
+}
+
+/**
  * Create a status callback for streaming updates.
  */
 export function createStatusCallback(
