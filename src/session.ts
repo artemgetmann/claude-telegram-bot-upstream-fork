@@ -33,6 +33,7 @@ import {
   type CodexReasoningEffort,
   MCP_SERVERS,
   SAFETY_PROMPT,
+  LEGACY_SESSION_FILES,
   SESSION_FILE,
   STREAMING_DEBUG,
   STREAMING_SYNTHETIC_FALLBACK_MIN_CHARS,
@@ -1194,17 +1195,29 @@ class ClaudeSession {
    * Load session history from disk.
    */
   private loadSessionHistory(): SessionHistory {
-    try {
-      const file = Bun.file(SESSION_FILE);
-      if (!file.size) {
-        return { sessions: [] };
-      }
+    const sessionFiles = Array.from(
+      new Set([SESSION_FILE, ...LEGACY_SESSION_FILES])
+    );
 
-      const text = readFileSync(SESSION_FILE, "utf-8");
-      return JSON.parse(text) as SessionHistory;
-    } catch {
-      return { sessions: [] };
+    for (const sessionFile of sessionFiles) {
+      try {
+        const file = Bun.file(sessionFile);
+        if (!file.size) {
+          continue;
+        }
+
+        if (sessionFile !== SESSION_FILE) {
+          console.log(`Loading legacy session history from ${sessionFile}`);
+        }
+
+        const text = readFileSync(sessionFile, "utf-8");
+        return JSON.parse(text) as SessionHistory;
+      } catch {
+        // Try next candidate file path.
+      }
     }
+
+    return { sessions: [] };
   }
 
   /**

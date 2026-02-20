@@ -25,7 +25,7 @@ Telegram message → Handler → Auth check → Rate limit → Claude session �
 
 - **`src/index.ts`** - Entry point, registers handlers, starts polling
 - **`src/config.ts`** - Environment parsing, MCP loading, safety prompts
-- **`src/session.ts`** - `ClaudeSession` class wrapping Agent SDK V2 with streaming, session persistence (`/tmp/claude-telegram-session.json`), and defense-in-depth safety checks
+- **`src/session.ts`** - `ClaudeSession` class wrapping Agent SDK V2 with streaming, session persistence (`<AI_RUNTIME_DIR>/claude-telegram-session.json`), and defense-in-depth safety checks
 - **`src/security.ts`** - `RateLimiter` (token bucket), path validation, command safety checks
 - **`src/formatting.ts`** - Markdown→HTML conversion for Telegram, tool status emoji formatting
 - **`src/utils.ts`** - Audit logging, voice transcription (OpenAI), typing indicators
@@ -57,7 +57,7 @@ Each message type has a dedicated async handler:
 
 All config via `.env` (copy from `.env.example`). Key variables:
 - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_USERS` (required)
-- `CLAUDE_WORKING_DIR` - Working directory for Claude
+- `AI_WORKING_DIR` / `CLAUDE_WORKING_DIR` - Working directory for the assistant
 - `ALLOWED_PATHS` - Directories Claude can access
 - `OPENAI_API_KEY` - For voice transcription
 - `CLAUDE_ENABLE_CHROME` - Enables Claude Code native Chrome control (`--chrome`)
@@ -66,9 +66,9 @@ MCP servers defined in `mcp-config.ts`.
 
 ### Runtime Files
 
-- `/tmp/claude-telegram-session.json` - Session persistence for `/resume`
-- `/tmp/telegram-bot/` - Downloaded photos/documents
-- `/tmp/claude-telegram-audit.log` - Audit log
+- `<AI_RUNTIME_DIR>/claude-telegram-session.json` - Session persistence for `/resume`
+- `<AI_RUNTIME_DIR>/telegram-bot/` - Downloaded photos/documents
+- `<AI_RUNTIME_DIR>/claude-telegram-audit.log` - Audit log
 
 ### Claude in Chrome Integration
 
@@ -141,4 +141,4 @@ tail -f /tmp/claude-telegram-bot.err
 ```
 
 Plist: `~/Library/LaunchAgents/com.claude-telegram-ts.plist`
-Agent workspace: `~/Programming_Projects/claude-telegram-bot/` (CLAUDE_WORKING_DIR)
+Agent workspace: `~/Programming_Projects/claude-code-telegram-bot/workspace` (AI_WORKING_DIR)
