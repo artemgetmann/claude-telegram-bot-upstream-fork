@@ -281,7 +281,7 @@ Model switch format (canonical):
 
 ```text
 /model opus 4.6
-/model sonnet 4.5
+/model sonnet 4.6
 /model codex 5.3 low
 /model codex 5.3 medium
 /model codex 5.3 high

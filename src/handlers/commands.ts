@@ -227,7 +227,7 @@ export async function handlePolicy(ctx: Context): Promise<void> {
  *
  * Canonical examples:
  * - /model opus 4.6
- * - /model sonnet 4.5
+ * - /model sonnet 4.6
  * - /model codex 5.3 low
  * - /model codex 5.3 medium
  * - /model codex 5.3 high
@@ -249,7 +249,7 @@ export async function handleModel(ctx: Context): Promise<void> {
       `Current: <b>${session.assistant}</b> / <code>${session.modelDisplay}</code>\n\n` +
         `Usage:\n` +
         `/model opus 4.6\n` +
-        `/model sonnet 4.5\n` +
+        `/model sonnet 4.6\n` +
         `/model codex 5.3 low\n` +
         `/model codex 5.3 medium\n` +
         `/model codex 5.3 high`,

@@ -133,6 +133,9 @@ function parseClaudeAlias(selection: string): string | null {
   if (compact === "claude46opus" || compact === "opus46") {
     return "claude-opus-4-6";
   }
+  if (compact === "claude46sonnet" || compact === "sonnet46") {
+    return "claude-sonnet-4-6";
+  }
   if (compact === "claude45sonnet" || compact === "sonnet45") {
     return "claude-sonnet-4-5";
   }
@@ -250,6 +253,9 @@ class ClaudeSession {
     if (compactToken(this.claudeModel) === "claudeopus46") {
       return "opus 4.6";
     }
+    if (compactToken(this.claudeModel) === "claudesonnet46") {
+      return "sonnet 4.6";
+    }
     if (compactToken(this.claudeModel) === "claudesonnet45") {
       return "sonnet 4.5";
     }
@@ -296,7 +302,7 @@ class ClaudeSession {
    *
    * Canonical examples:
    * - "opus 4.6"
-   * - "sonnet 4.5"
+   * - "sonnet 4.6"
    * - "codex 5.3 low"
    * - "codex 5.3 medium"
    * - "codex 5.3 high"
@@ -307,7 +313,7 @@ class ClaudeSession {
   setModel(selectionRaw: string): [success: boolean, message: string] {
     const selection = selectionRaw.trim();
     if (!selection) {
-      return [false, "Usage: /model <opus 4.6|sonnet 4.5|codex 5.3 high|...>"];
+      return [false, "Usage: /model <opus 4.6|sonnet 4.6|codex 5.3 high|...>"];
     }
 
     const normalized = selection.toLowerCase();
@@ -335,7 +341,7 @@ class ClaudeSession {
     } else if (normalized.startsWith("claude")) {
       return [
         false,
-        "Claude models: 'opus 4.6' or 'sonnet 4.5'",
+        "Claude models: 'opus 4.6' or 'sonnet 4.6'",
       ];
     } else {
       this.assistantMode = "codex";
