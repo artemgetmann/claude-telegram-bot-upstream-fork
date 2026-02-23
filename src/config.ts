@@ -113,7 +113,7 @@ export const CODEX_SANDBOX_MODE: CodexSandboxMode =
   codexSandboxRaw === "danger-full-access"
     ? codexSandboxRaw
     : "workspace-write";
-const codexApprovalRaw = (process.env.CODEX_APPROVAL_POLICY || "never")
+const codexApprovalRaw = (process.env.CODEX_APPROVAL_POLICY || "on-request")
   .toLowerCase()
   .trim();
 export const CODEX_APPROVAL_POLICY: CodexApprovalPolicy =
@@ -122,7 +122,7 @@ export const CODEX_APPROVAL_POLICY: CodexApprovalPolicy =
   codexApprovalRaw === "on-failure" ||
   codexApprovalRaw === "untrusted"
     ? codexApprovalRaw
-    : "never";
+    : "on-request";
 export const CODEX_NETWORK_ACCESS_ENABLED =
   (process.env.CODEX_NETWORK_ACCESS_ENABLED || "true").toLowerCase() ===
   "true";
