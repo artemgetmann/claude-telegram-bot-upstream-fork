@@ -74,11 +74,8 @@ export async function handleNew(ctx: Context): Promise<void> {
 
   // Stop any running query
   if (session.isRunning) {
-    const result = await session.stop();
-    if (result) {
-      await Bun.sleep(100);
-      session.clearStopRequested();
-    }
+    await session.stop();
+    await session.waitForIdle();
   }
 
   // Clear session
@@ -99,12 +96,7 @@ export async function handleStop(ctx: Context): Promise<void> {
   }
 
   if (session.isRunning) {
-    const result = await session.stop();
-    if (result) {
-      // Wait for the abort to be processed, then clear stopRequested so next message can proceed
-      await Bun.sleep(100);
-      session.clearStopRequested();
-    }
+    await session.stop();
     // Silent stop - no message shown
   }
   // If nothing running, also stay silent
@@ -259,11 +251,8 @@ export async function handleModel(ctx: Context): Promise<void> {
   }
 
   if (session.isRunning) {
-    const result = await session.stop();
-    if (result) {
-      await Bun.sleep(100);
-      session.clearStopRequested();
-    }
+    await session.stop();
+    await session.waitForIdle();
   }
 
   const [ok, message] = session.setModel(modelArg);

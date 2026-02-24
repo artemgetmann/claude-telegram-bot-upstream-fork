@@ -291,10 +291,16 @@ class ClaudeSession {
   }
 
   /**
-   * Clear the stopRequested flag (used after interrupt to allow new message to proceed).
+   * Wait until the session is no longer running/processing.
+   * Useful for interrupt+replace flows where a new message should only start
+   * after the previous turn has fully settled.
    */
-  clearStopRequested(): void {
-    this.stopRequested = false;
+  async waitForIdle(timeoutMs = 10000): Promise<boolean> {
+    const deadline = Date.now() + timeoutMs;
+    while (this.isRunning && Date.now() < deadline) {
+      await Bun.sleep(50);
+    }
+    return !this.isRunning;
   }
 
   /**
@@ -811,6 +817,11 @@ class ClaudeSession {
       this.currentTool = null;
     }
 
+    if (this.stopRequested) {
+      this.stopRequested = false;
+      throw new Error("Query cancelled");
+    }
+
     this.lastActivity = new Date();
     this.lastError = null;
     this.lastErrorTime = null;
@@ -1127,6 +1138,11 @@ class ClaudeSession {
       this.abortController = null;
       this.queryStarted = null;
       this.currentTool = null;
+    }
+
+    if (this.stopRequested) {
+      this.stopRequested = false;
+      throw new Error("Query cancelled");
     }
 
     this.lastActivity = new Date();
